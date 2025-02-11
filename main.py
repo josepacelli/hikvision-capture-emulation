@@ -94,14 +94,14 @@ async def serve_image(request: Request, delay: Optional[int] = REQUEST_DELAY_SEC
     request_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # Data/hora formatada
     request_id = f"{request_ip}_{request_time}"
 
-    # Checa requisições duplicadas
-    # if request_ip in DUPLICATE_REQUEST_CHECK:
-    #     last_request_time = DUPLICATE_REQUEST_CHECK[request_ip]
-    #     # Se a requisição ocorrer no mesmo segundo, trata como duplicada
-    #     if last_request_time == request_time:
-    #         raise HTTPException(status_code=429, detail="Duplicate request detected")
-    #
-    # DUPLICATE_REQUEST_CHECK[request_ip] = request_time
+    #  Checa requisições duplicadas
+    if request_ip in DUPLICATE_REQUEST_CHECK:
+        last_request_time = DUPLICATE_REQUEST_CHECK[request_ip]
+        # Se a requisição ocorrer no mesmo segundo, trata como duplicada
+        if last_request_time == request_time:
+            raise HTTPException(status_code=429, detail="Duplicate request detected")
+
+    DUPLICATE_REQUEST_CHECK[request_ip] = request_time
 
     # Remove entradas antigas após um tempo (limpeza em segundo plano)
     threading.Thread(target=cleanup_requests).start()
