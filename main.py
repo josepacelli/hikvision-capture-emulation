@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI, Request
 from fastapi.responses import StreamingResponse
 from fastapi.exceptions import HTTPException
@@ -58,13 +60,25 @@ def cleanup_requests():
         if (now - last_request).seconds > 10:  # Limpeza após 10 segundos
             del DUPLICATE_REQUEST_CHECK[key]
 
+# Função para carregar uma imagem aleatória da pasta 'imagem'
+def load_random_image_from_folder(folder_path='imagem'):
+    # Lista todos os arquivos na pasta
+    files = os.listdir(folder_path)
+    # Filtra apenas arquivos de imagem (opcional, dependendo do conteúdo da pasta)
+    image_files = [f for f in files if f.endswith(('.png', '.jpg', '.jpeg'))]
+    # Escolhe um arquivo de imagem aleatoriamente
+    random_image_file = random.choice(image_files)
+    # Carrega a imagem
+    image_path = os.path.join(folder_path, random_image_file)
+    image = Image.open(image_path)
+    return image
 
 # Endpoint para servir a imagem
 @app.get("/ISAPI/Streaming/channels/0/picture")
 @app.get("/ISAPI/Streaming/channels/1/picture")
 @app.get("/ISAPI/Streaming/channels/2/picture")
 @app.get("/api/snapshot.cgi")
-async def serve_image(request: Request, delay: Optional[int] = REQUEST_DELAY_SECONDS):
+async def serve_image(request: Request, delay: Optional[int] = REQUEST_DELAY_SECONDS, random_image: Optional[bool] = False):
     global DUPLICATE_REQUEST_CHECK
 
     # Simula atraso configurado
@@ -99,7 +113,10 @@ async def serve_image(request: Request, delay: Optional[int] = REQUEST_DELAY_SEC
         return StreamingResponse(img_io, media_type="image/jpeg")
 
     # Gera a imagem
-    image = generate_random_image()
+    if random_image:
+        image = generate_random_image()
+    else:
+        image = load_random_image_from_folder()
     img_io = io.BytesIO()
     image.save(img_io, 'JPEG')
     img_io.seek(0)
