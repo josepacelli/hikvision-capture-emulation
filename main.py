@@ -1,8 +1,8 @@
 import os
-
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from fastapi.responses import StreamingResponse
 from fastapi.exceptions import HTTPException
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from PIL import Image, ImageDraw, ImageFont
 import io
 import random
@@ -10,8 +10,11 @@ import time
 import threading
 from datetime import datetime
 from typing import Optional
+import secrets
 
 app = FastAPI()
+
+security = HTTPBasic()
 
 # Configurações globais
 REQUEST_DELAY_SECONDS = 0  # Tempo de atraso (configurável)
@@ -19,6 +22,16 @@ OVERLOAD_PROBABILITY = 0.00  # Probabilidade de simular erro de sobrecarga (10%)
 ERROR_PROBABILITY = 0.00  # Probabilidade de retornar um JPEG inválido (20%)
 DUPLICATE_REQUEST_CHECK = {}  # Armazena controle de requisições duplicadas
 FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+
+def verify_credentials(credentials: HTTPBasicCredentials = Depends(security)):
+    correct_username = secrets.compare_digest(credentials.username, "admin")
+    correct_password = secrets.compare_digest(credentials.password, "1234")
+    if not (correct_username and correct_password):
+        raise HTTPException(
+            status_code=401,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Basic"},
+        )
 
 # Função para gerar uma imagem aleatória
 def generate_random_image(width=1920, height=1080):
@@ -45,11 +58,9 @@ def generate_random_image(width=1920, height=1080):
 
     return image
 
-
 # Função para simular atraso configurado
 def simulate_delay(delay: int):
     time.sleep(delay)
-
 
 # Limpeza de entradas antigas
 def cleanup_requests():
@@ -78,7 +89,12 @@ def load_random_image_from_folder(folder_path='imagem'):
 @app.get("/ISAPI/Streaming/channels/1/picture")
 @app.get("/ISAPI/Streaming/channels/2/picture")
 @app.get("/api/snapshot.cgi")
-async def serve_image(request: Request, delay: Optional[int] = REQUEST_DELAY_SECONDS, random_image: Optional[bool] = False):
+async def serve_image(
+    request: Request,
+    delay: Optional[int] = REQUEST_DELAY_SECONDS,
+    random_image: Optional[bool] = False,
+    credentials: HTTPBasicCredentials = Depends(verify_credentials)
+):
     global DUPLICATE_REQUEST_CHECK
 
     # Simula atraso configurado
