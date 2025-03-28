@@ -18,14 +18,14 @@ security = HTTPBasic()
 
 # Configurações globais
 REQUEST_DELAY_SECONDS = 0  # Tempo de atraso (configurável)
-OVERLOAD_PROBABILITY = 0.00  # Probabilidade de simular erro de sobrecarga (10%)
+OVERLOAD_PROBABILITY = 0.05  # Probabilidade de simular erro de sobrecarga (10%)
 ERROR_PROBABILITY = 0.00  # Probabilidade de retornar um JPEG inválido (20%)
 DUPLICATE_REQUEST_CHECK = {}  # Armazena controle de requisições duplicadas
 FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 
 def verify_credentials(credentials: HTTPBasicCredentials = Depends(security)):
     correct_username = secrets.compare_digest(credentials.username, "admin")
-    correct_password = secrets.compare_digest(credentials.password, "1234")
+    correct_password = secrets.compare_digest(credentials.password, "atl%123operacao")
     if not (correct_username and correct_password):
         raise HTTPException(
             status_code=401,
