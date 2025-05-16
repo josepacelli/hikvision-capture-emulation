@@ -1,0 +1,11 @@
+FROM ubuntu:22.04
+
+RUN apt update && \
+    apt install -y vlc && \
+    apt clean
+
+COPY ./video/video.mp4 /video.mp4
+
+CMD ["cvlc", "/video.mp4", \
+     "--sout=#transcode{vcodec=mp1v,acodec=mpga,vb=800,ab=128}:http{mux=ts,dst=:8080/stream}", \
+     "--loop", "--no-sout-all", "--sout-keep"]

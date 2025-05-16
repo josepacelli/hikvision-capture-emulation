@@ -8,8 +8,9 @@ import io
 import random
 import time
 import threading
+import asyncio
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Generator
 import secrets
 
 app = FastAPI()
@@ -24,12 +25,12 @@ DUPLICATE_REQUEST_CHECK = {}  # Armazena controle de requisições duplicadas
 FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 
 def verify_credentials(credentials: HTTPBasicCredentials = Depends(security)):
-    correct_username = secrets.compare_digest(credentials.username, "user")
-    correct_password = secrets.compare_digest(credentials.password, "pass")
+    correct_username = secrets.compare_digest(credentials.username, "admin")
+    correct_password = secrets.compare_digest(credentials.password, "atl%123operacao")
     if not (correct_username and correct_password):
         raise HTTPException(
             status_code=401,
-            detail="Incorrect username or password",
+            detail="Usuario ou senha incorretos",
             headers={"WWW-Authenticate": "Basic"},
         )
 
@@ -138,3 +139,104 @@ async def serve_image(
     img_io.seek(0)
 
     return StreamingResponse(img_io, media_type='image/jpeg')
+
+VIDEO_FILE_PATH = './video/video.mp4'
+
+def get_video_stream() -> Generator[bytes, None, None]:
+    """Gera um stream contínuo do vídeo em loop"""
+    chunk_size = 1024 * 1024  # 1MB por chunk
+
+    if not os.path.exists(VIDEO_FILE_PATH):
+        raise FileNotFoundError(f"Arquivo de vídeo não encontrado: {VIDEO_FILE_PATH}")
+
+    while True:  # Loop infinito para repetir o vídeo
+        try:
+            with open(VIDEO_FILE_PATH, 'rb') as video_file:
+                while chunk := video_file.read(chunk_size):
+                    yield chunk
+        except Exception as e:
+            print(f"Erro ao acessar o arquivo de vídeo: {e}")
+            break
+        print(f"Reiniciando o vídeo: {VIDEO_FILE_PATH}")
+        time.sleep(0.5)  # Pequena pausa antes de reiniciar o vídeo (opcional)
+
+@app.get("/Streaming/channels/102/httppreview")
+async def stream_video():
+    """
+    Endpoint que simula streaming de vídeo em loop contínuo
+    Acesse via: http://172.10.1.78:8890/Streaming/channels/101/httppreview
+    """
+    return StreamingResponse(
+        get_video_stream(),
+        media_type="video/mp4",
+        headers={
+            "Content-Disposition": f"inline; filename={os.path.basename(VIDEO_FILE_PATH)}",
+            "Accept-Ranges": "bytes",
+            "Cache-Control": "no-cache",
+        }
+    )
+
+@app.get("/Streaming/channels/101/httppreview")
+async def stream_video(credentials: HTTPBasicCredentials = Depends(verify_credentials)):
+    """
+    Endpoint que simula streaming de vídeo MJPEG
+    Acesse via: http://172.10.1.78:8890/Streaming/channels/101/httppreview
+    """
+
+    async def mjpeg_generator():
+        # Cabeçalho MJPEG
+        boundary = "mjpegboundary"
+        yield f"--{boundary}\r\n".encode()
+
+        # Loop para simular frames do vídeo
+        while True:
+            try:
+                # Carrega uma imagem aleatória da pasta para simular um frame do vídeo
+                image = load_random_image_from_folder()
+
+                # Converte para JPEG e para bytes
+                img_io = io.BytesIO()
+                image.save(img_io, format='JPEG')
+                img_bytes = img_io.getvalue()
+
+                # Monta o frame MJPEG
+                content = (
+                    f"Content-Type: image/jpeg\r\n"
+                    f"Content-Length: {len(img_bytes)}\r\n\r\n"
+                ).encode()
+
+                yield content
+                yield img_bytes
+                yield f"\r\n--{boundary}\r\n".encode()
+
+                # Controla o framerate (ajuste conforme necessário)
+                await asyncio.sleep(0.1)  # ~10 FPS
+
+            except Exception as e:
+                print(f"Erro ao gerar frame MJPEG: {e}")
+                await asyncio.sleep(1)
+
+    return StreamingResponse(
+        mjpeg_generator(),
+        media_type="multipart/x-mixed-replace; boundary=mjpegboundary",
+        headers={
+            "Cache-Control": "no-cache"
+        }
+    )
+
+
+@app.get("/")
+async def root():
+    """
+    Endpoint raiz que retorna informações básicas sobre o simulador
+    """
+    return {
+        "aplicação": "Simulador Hikvision",
+        "versão": "1.5",
+        "endpoints_disponíveis": [
+            "/ISAPI/Streaming/channels/{0,1,2}/picture",
+            "/api/snapshot.cgi",
+            "/Streaming/channels/101/httppreview",
+            "/Streaming/channels/102/httppreview"
+        ]
+    }
