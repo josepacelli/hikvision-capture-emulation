@@ -17,6 +17,17 @@ app = FastAPI()
 
 security = HTTPBasic()
 
+from fastapi.middleware.cors import CORSMiddleware
+
+# Configuração do CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Permite todos os domínios (ajuste conforme necessário)
+    allow_credentials=True,
+    allow_methods=["*"],  # Permite todos os métodos HTTP
+    allow_headers=["*"],  # Permite todos os cabeçalhos
+)
+
 # Configurações globais
 REQUEST_DELAY_SECONDS = 0  # Tempo de atraso (configurável)
 OVERLOAD_PROBABILITY = 0.05  # Probabilidade de simular erro de sobrecarga (10%)
@@ -25,8 +36,8 @@ DUPLICATE_REQUEST_CHECK = {}  # Armazena controle de requisições duplicadas
 FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 
 def verify_credentials(credentials: HTTPBasicCredentials = Depends(security)):
-    correct_username = secrets.compare_digest(credentials.username, "admin")
-    correct_password = secrets.compare_digest(credentials.password, "atl%123operacao")
+    correct_username = secrets.compare_digest(credentials.username, "adm")
+    correct_password = secrets.compare_digest(credentials.password, "123")
     if not (correct_username and correct_password):
         raise HTTPException(
             status_code=401,
@@ -232,7 +243,7 @@ async def root():
     """
     return {
         "aplicação": "Simulador Hikvision",
-        "versão": "1.5",
+        "versão": "1.6",
         "endpoints_disponíveis": [
             "/ISAPI/Streaming/channels/{0,1,2}/picture",
             "/api/snapshot.cgi",
