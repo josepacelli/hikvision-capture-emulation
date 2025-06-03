@@ -36,8 +36,10 @@ DUPLICATE_REQUEST_CHECK = {}  # Armazena controle de requisições duplicadas
 FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 
 def verify_credentials(credentials: HTTPBasicCredentials = Depends(security)):
-    correct_username = secrets.compare_digest(credentials.username, "adm")
-    correct_password = secrets.compare_digest(credentials.password, "123")
+    env_username = os.environ.get("SIMULADOR_USER", "user")
+    env_password = os.environ.get("SIMULADOR_PASS", "pass")
+    correct_username = secrets.compare_digest(credentials.username, env_username)
+    correct_password = secrets.compare_digest(credentials.password, env_password)
     if not (correct_username and correct_password):
         raise HTTPException(
             status_code=401,
