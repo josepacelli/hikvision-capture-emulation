@@ -11,7 +11,10 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copiar o restante do código da aplicação para o container
-COPY . .
+COPY main.py main.py
+COPY imagem/ imagem/
+COPY video/ video/
+COPY requirements.txt requirements.txt
 
 # Expor a porta padrão do Uvicorn
 EXPOSE 8005

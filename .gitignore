@@ -170,6 +170,7 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
-/imagem/
+/imagem_bkp/
 /imagem_old/
 .DS_Store
+/imagem/
