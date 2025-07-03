@@ -36,6 +36,14 @@ DUPLICATE_REQUEST_CHECK = {}  # Armazena controle de requisições duplicadas
 FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 
 def verify_credentials(credentials: HTTPBasicCredentials = Depends(security)):
+    """Credenciais para os endpoints de captura
+
+    Args:
+        credentials (HTTPBasicCredentials, optional): _description_. Defaults to Depends(security).
+
+    Raises:
+        HTTPException: _description_
+    """
     env_username = os.environ.get("SIMULADOR_USER", "user")
     env_password = os.environ.get("SIMULADOR_PASS", "pass")
     correct_username = secrets.compare_digest(credentials.username, env_username)
