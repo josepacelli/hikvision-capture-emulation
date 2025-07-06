@@ -122,6 +122,8 @@ async def serve_image(
     # Simula atraso configurado
     if delay > 0:
         simulate_delay(delay)
+  
+    
 
     # Simula erro de sobrecarga (503)
     if random.random() < OVERLOAD_PROBABILITY:
@@ -131,6 +133,8 @@ async def serve_image(
     request_ip = request.client.host
     request_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # Data/hora formatada
     request_id = f"{request_ip}_{request_time}"
+    print(f"Requisição recebida de {request_ip} em {request_time}")
+
 
     #  Checa requisições duplicadas
     if request_ip in DUPLICATE_REQUEST_CHECK:
