@@ -174,3 +174,7 @@ cython_debug/
 /imagem_old/
 .DS_Store
 /imagem/
+
+
+build-linux.sh
+build-mac.sh
